@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+const workingDir = "temp"
+
 var verbose = flag.Bool("verbose", false, "be verbose")
 var noop = flag.Bool("noop", false, "don't actually do anything, just print what would be done")
 
@@ -76,13 +78,15 @@ func main() {
 	// Open Bucket
 	s := s3.New(auth, aws.USEast)
 	bucket := s.Bucket(config.S3Bucket)
-	res, err := bucket.List("", "", "", 5)
-	if err != nil {
-		Fatalf("%s", err)
+
+	// create a working directory to store the backups
+	currentDir, err := os.Getwd()
+	fullWorkingDir := currentDir + "/" + workingDir
+	if _, err := os.Stat(fullWorkingDir); !os.IsNotExist(err) {
+		log.Printf("working directory already exists at %s, removing it", fullWorkingDir)
+		os.RemoveAll(fullWorkingDir)
 	}
-	for _, v := range res.Contents {
-		log.Printf(v.Key)
-	}
+	os.Mkdir(fullWorkingDir, 0700)
 
 	// back up the databases
 	for _, db := range GetDatabases() {
@@ -102,9 +106,22 @@ func main() {
 
 	// compress backups
 
-	// send to s3
+	// upload to s3
+
+	// cleanup working directory
+	os.RemoveAll(fullWorkingDir)
 
 	// rotate old s3 backups
+	// We keey 1 backup per day for the last week, 1 backup per week for the
+	//   last month, and 1 backup per month indefinitely.
+	log.Printf("rotating old backups")
+	res, err := bucket.List("", "", "", 1000)
+	if err != nil {
+		Fatalf("%s", err)
+	}
+	for _, v := range res.Contents {
+		log.Printf("deleting %s", v.Key)
+	}
 
 	log.Printf("done - took %s", time.Since(start_time))
 }
