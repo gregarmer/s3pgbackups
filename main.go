@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"github.com/dustin/go-humanize"
-	"github.com/goamz/goamz/aws"
 	"github.com/goamz/goamz/s3"
 	_ "github.com/lib/pq"
 	"io/ioutil"
@@ -45,10 +44,9 @@ func PreFlight(config *Config) {
 func GetDatabases() []string {
 	var databases []string
 
+	// XXX: Parameterize this, or figure out a way to use ~/.pgpass instead
 	db, err := sql.Open("postgres", "user=vagrant password=vagrant dbname=postgres sslmode=require")
 	checkErr(err)
-
-	log.Print(db)
 
 	rows, err := db.Query("SELECT datname FROM pg_database")
 	checkErr(err)
@@ -66,29 +64,6 @@ func GetDatabases() []string {
 
 	return databases
 }
-
-// func GetTables(database string) []string {
-// 	var tables []string
-
-// 	db, err := sql.Open("postgres", fmt.Sprintf("user=vagrant password=vagrant dbname=%s sslmode=require", database))
-// 	checkErr(err)
-
-// 	rows, err := db.Query("SELECT tablename FROM pg_tables WHERE schemaname = 'public'")
-// 	checkErr(err)
-
-// 	defer rows.Close()
-// 	for rows.Next() {
-// 		var name string
-// 		err = rows.Scan(&name)
-// 		checkErr(err)
-// 		tables = append(tables, name)
-// 	}
-
-// 	err = rows.Err() // get any error encountered during iteration
-// 	checkErr(err)
-
-// 	return tables
-// }
 
 func checkErr(err error) {
 	if err != nil {
@@ -117,14 +92,8 @@ func main() {
 	// pre-flight check (s3 keys, access to postgres etc)
 	PreFlight(config)
 
-	// setup aws auth
-	auth := aws.Auth{}
-	auth.AccessKey = config.AwsAccessKey
-	auth.SecretKey = config.AwsSecretKey
-
-	// Open Bucket
-	s := s3.New(auth, aws.USEast)
-	bucket := s.Bucket(config.S3Bucket)
+	awsS3 := AwsS3{config}
+	bucket := awsS3.GetBucket()
 
 	// create a working directory to store the backups
 	currentDir, _ := os.Getwd()
@@ -189,15 +158,8 @@ func main() {
 	os.RemoveAll(fullWorkingDir)
 
 	// rotate old s3 backups
-	// We keey 1 backup per day for the last week, 1 backup per week for the
-	//   last month, and 1 backup per month indefinitely.
 	log.Printf("rotating old backups")
-	res, err := bucket.List("", "", "", 5)
-	checkErr(err)
-
-	for _, v := range res.Contents {
-		log.Printf("deleting %s", v.Key)
-	}
+	awsS3.RotateBackups()
 
 	log.Printf("done - took %s", time.Since(start_time))
 }
