@@ -37,13 +37,23 @@ func (awsS3 AwsS3) GetBucket() *s3.Bucket {
 	return bucket
 }
 
+func (awsS3 AwsS3) DeleteFile(fileName string) {
+	log.Printf("deleting %s", fileName)
+	err := awsS3.GetBucket().Del(fileName)
+	checkErr(err)
+}
+
 func (awsS3 AwsS3) RotateBackups() {
 	// We keep 1 backup per day for the last week, 1 backup per week for the
 	//   last month, and 1 backup per month indefinitely.
-	res, err := awsS3.GetBucket().List("", "", "", 5)
+	res, err := awsS3.GetBucket().List("", "", "", 1000)
 	checkErr(err)
 
 	for _, v := range res.Contents {
-		log.Printf("deleting %s", v.Key)
+		awsS3.DeleteFile(v.Key)
 	}
+
+	// 1. Come up with a set of required dates
+	// 2. Run symmetric difference against all dates from list
+	// 3. Delete remainder
 }

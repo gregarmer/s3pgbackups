@@ -127,6 +127,10 @@ func main() {
 
 			// compress backup
 			log.Printf("compressing %s", backupFileName)
+			cmd = exec.Command("/bin/gzip", fmt.Sprintf("%s/%s", fullWorkingDir, backupFileName))
+			cmd.Stdout = &out
+			err = cmd.Run()
+			checkErr(err)
 		}
 	}
 
