@@ -16,9 +16,10 @@ This application will backup your PostgreSQL cluser to Amazon S3, which includes
 ### Debian (or debian derivatives)
 
 ```
-$ apt-key --add foo
-$ echo "deb foo" > /etc/apt/sources.d/sigterm.conf
-$ apt-get update && apt-get install s3pgbackups
+$ echo 'deb http://deb.sigterm.sh/ squeeze main' > /etc/apt/sources.list.d/sigterm.list
+$ apt-key adv --keyserver keys.gnupg.net --recv-keys 15E7AE04FAC36D0B
+$ apt-get update
+$ apt-get install s3pgbackups
 ```
 
 ### CentOS (or RHEL / other rpm based distro's)
