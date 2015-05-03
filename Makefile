@@ -1,5 +1,5 @@
 build: clean
-	go install
+	go get .
 	go build -o s3pgbackups *.go
 
 clean:
