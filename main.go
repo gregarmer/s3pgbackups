@@ -2,12 +2,10 @@ package main
 
 import (
 	"bytes"
-	"database/sql"
 	"flag"
 	"fmt"
 	"github.com/dustin/go-humanize"
 	"github.com/goamz/goamz/s3"
-	_ "github.com/lib/pq"
 	"io/ioutil"
 	"log"
 	"os"
@@ -26,43 +24,6 @@ func Fatalf(error string, args ...interface{}) {
 	criticalLog := log.New(os.Stderr, "", log.LstdFlags)
 	criticalLog.Printf(error, args...)
 	os.Exit(1)
-}
-
-func PreFlight(config *Config) {
-	// are we Config.PostgresUser ?
-
-	// do we have s3 config (keys, buckets etc) ?
-	if config.AwsAccessKey == "" {
-		Fatalf("missing AwsAccessKey, cannot continue")
-	}
-
-	if config.AwsSecretKey == "" {
-		Fatalf("missing AwsSecretKey, cannot continue")
-	}
-}
-
-func GetDatabases() []string {
-	var databases []string
-
-	// XXX: Parameterize this, or figure out a way to use ~/.pgpass instead
-	db, err := sql.Open("postgres", "user=vagrant password=vagrant dbname=postgres sslmode=require")
-	checkErr(err)
-
-	rows, err := db.Query("SELECT datname FROM pg_database")
-	checkErr(err)
-
-	defer rows.Close()
-	for rows.Next() {
-		var name string
-		err = rows.Scan(&name)
-		checkErr(err)
-		databases = append(databases, name)
-	}
-
-	err = rows.Err() // get any error encountered during iteration
-	checkErr(err)
-
-	return databases
 }
 
 func checkErr(err error) {
@@ -89,11 +50,12 @@ func main() {
 	config := LoadConfig()
 	log.Printf("config: %+v", config)
 
-	// pre-flight check (s3 keys, access to postgres etc)
-	PreFlight(config)
-
+	// AwsS3
 	awsS3 := AwsS3{config}
 	bucket := awsS3.GetBucket()
+
+	// Postgres
+	postgres := Postgres{config}
 
 	// create a working directory to store the backups
 	currentDir, _ := os.Getwd()
@@ -105,7 +67,7 @@ func main() {
 	os.Mkdir(fullWorkingDir, 0700)
 
 	// back up the databases
-	for _, db := range GetDatabases() {
+	for _, db := range postgres.GetDatabases() {
 		if config.ShouldExcludeDb(db) {
 			log.Printf("[database] skipping '%s' because it's in excludes", db)
 		} else {
@@ -142,15 +104,14 @@ func main() {
 	// walk temp and upload everything to S3
 	filepath.Walk(fullWorkingDir, func(localFile string, fi os.FileInfo, err error) (e error) {
 		if !fi.IsDir() {
-			log.Printf("uploading %s (%s)", localFile, humanize.Bytes(uint64(fi.Size())))
-
 			file, err := os.Open(localFile)
 			checkErr(err)
 			defer file.Close()
 
 			if *noop {
-				log.Printf("would upload %s (%s)", fi.Name(), humanize.Bytes(uint64(fi.Size())))
+				log.Printf("would upload %s (%s) (noop)", fi.Name(), humanize.Bytes(uint64(fi.Size())))
 			} else {
+				log.Printf("uploading %s (%s)", localFile, humanize.Bytes(uint64(fi.Size())))
 				err = bucket.PutReader("daily/"+fi.Name(), file, fi.Size(), "application/x-gzip", s3.BucketOwnerFull, s3.Options{})
 				checkErr(err)
 			}

@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"os"
 	"os/user"
@@ -41,6 +42,19 @@ func (c Config) ShouldExcludeTable(table string) bool {
 	return _shouldExclude(table, c.PostgresExcludeTable)
 }
 
+func (c Config) PreFlight() error {
+	// do we have s3 config (keys, buckets etc) ?
+	if c.AwsAccessKey == "" {
+		return errors.New("missing AwsAccessKey, cannot continue")
+	}
+
+	if c.AwsSecretKey == "" {
+		return errors.New("missing AwsSecretKey, cannot continue")
+	}
+
+	return nil
+}
+
 func GetConfigPath() string {
 	u, _ := user.Current()
 	return u.HomeDir + "/" + configFile
@@ -61,6 +75,9 @@ func LoadConfig() *Config {
 	if err := decoder.Decode(&config); err != nil {
 		Fatalf("error: %s", err)
 	}
+
+	// pre-flight check (s3 keys, access to postgres etc)
+	checkErr(config.PreFlight())
 
 	return &config
 }

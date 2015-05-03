@@ -38,9 +38,13 @@ func (awsS3 AwsS3) GetBucket() *s3.Bucket {
 }
 
 func (awsS3 AwsS3) DeleteFile(fileName string) {
-	log.Printf("deleting %s", fileName)
-	err := awsS3.GetBucket().Del(fileName)
-	checkErr(err)
+	if *noop {
+		log.Printf("would delete %s (noop)", fileName)
+	} else {
+		log.Printf("deleting %s", fileName)
+		err := awsS3.GetBucket().Del(fileName)
+		checkErr(err)
+	}
 }
 
 func (awsS3 AwsS3) RotateBackups() {
