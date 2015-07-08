@@ -20,7 +20,8 @@ import (
 const workingDir = "temp"
 
 var verbose = flag.Bool("v", false, "be verbose")
-var noop = flag.Bool("n", false, "don't actually do anything, just print what would be done")
+var noop = flag.Bool("n", false,
+	"don't actually do anything, just print what would be done")
 
 func main() {
 	start_time := time.Now()
@@ -34,7 +35,7 @@ func main() {
 	log.Printf("starting postgres cluster backup")
 
 	if *noop {
-		log.Printf("running in no-op mode, no commands will actually be executed")
+		log.Printf("running in no-op mode, no commands will really be executed")
 	}
 
 	conf := config.LoadConfig()
@@ -56,7 +57,8 @@ func main() {
 	currentDir, _ := os.Getwd()
 	fullWorkingDir := currentDir + "/" + workingDir
 	if _, err := os.Stat(fullWorkingDir); !os.IsNotExist(err) {
-		log.Printf("working directory already exists at %s, removing it", fullWorkingDir)
+		log.Printf("working directory already exists at %s, removing it",
+			fullWorkingDir)
 		os.RemoveAll(fullWorkingDir)
 	}
 	os.Mkdir(fullWorkingDir, 0700)
@@ -69,7 +71,8 @@ func main() {
 			log.Printf("[%s] backing up database", db)
 
 			// create backup
-			backupFileName := fmt.Sprintf("%s-%s.sql", db, time.Now().Format("2006-01-02"))
+			backupFileName := fmt.Sprintf("%s-%s.sql", db,
+				time.Now().Format("2006-01-02"))
 			pgDumpCmd := fmt.Sprintf("-E UTF-8 -T %s -f %s %s",
 				strings.Join(conf.PostgresExcludeTable, " -T "),
 				fmt.Sprintf("%s/%s", fullWorkingDir, backupFileName),
@@ -84,7 +87,8 @@ func main() {
 
 			// compress backup
 			log.Printf("compressing %s", backupFileName)
-			cmd = exec.Command("gzip", fmt.Sprintf("%s/%s", fullWorkingDir, backupFileName))
+			cmd = exec.Command("gzip", fmt.Sprintf("%s/%s", fullWorkingDir,
+				backupFileName))
 			cmd.Stdout = &out
 			err = cmd.Run()
 			utils.CheckErr(err)
