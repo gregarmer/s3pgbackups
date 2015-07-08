@@ -1,8 +1,9 @@
-package main
+package config
 
 import (
 	"encoding/json"
 	"errors"
+	"github.com/gregarmer/s3pgbackups/utils"
 	"io/ioutil"
 	"os"
 	"os/user"
@@ -20,7 +21,9 @@ type Config struct {
 	S3RotateOld bool   `json:"s3_rotate_old"`
 
 	// PostgreSQL
-	PostgresUser         string   `json:"pg_user"`
+	PostgresUsername     string   `json:"pg_username"`
+	PostgresPassword     string   `json:"pg_password"`
+	PostgresSSL          bool     `json:"pg_sslmode"`
 	PostgresExcludeDb    []string `json:"pg_exclude_dbs"`
 	PostgresExcludeTable []string `json:"pg_exclude_tables"`
 }
@@ -32,6 +35,10 @@ func _shouldExclude(item string, excludes []string) bool {
 		}
 	}
 	return false
+}
+
+func (c *Config) Copy() Config {
+	return *c
 }
 
 func (c Config) ShouldExcludeDb(db string) bool {
@@ -65,7 +72,7 @@ func LoadConfig() *Config {
 	configPath := GetConfigPath()
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		InitConfig()
-		Fatalf("couldn't find config, created empty config at %s, please configure", configPath)
+		utils.Fatalf("couldn't find config, created empty config at %s, please configure", configPath)
 	}
 
 	// load config
@@ -73,11 +80,11 @@ func LoadConfig() *Config {
 	decoder := json.NewDecoder(file)
 	config := Config{}
 	if err := decoder.Decode(&config); err != nil {
-		Fatalf("error: %s", err)
+		utils.Fatalf("error: %s", err)
 	}
 
 	// pre-flight check (s3 keys, access to postgres etc)
-	checkErr(config.PreFlight())
+	utils.CheckErr(config.PreFlight())
 
 	return &config
 }
@@ -89,6 +96,6 @@ func InitConfig() {
 	config := Config{}
 	fileJson, _ := json.MarshalIndent(config, "", "  ")
 	if err := ioutil.WriteFile(configPath, fileJson, 0600); err != nil {
-		Fatalf("error: %+v", err)
+		utils.Fatalf("error: %+v", err)
 	}
 }

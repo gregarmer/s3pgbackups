@@ -6,7 +6,7 @@ build: clean
 	go get "github.com/goamz/goamz/s3"
 	go get "github.com/lib/pq"
 	test -d $(DIST_DIR) || mkdir $(DIST_DIR)
-	go build -o $(DIST_DIR)/s3pgbackups src/*.go
+	go build -o $(DIST_DIR)/s3pgbackups main.go
 
 clean:
 	rm -rf $(DIST_DIR)

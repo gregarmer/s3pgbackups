@@ -4,13 +4,15 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"github.com/dustin/go-humanize"
 	"github.com/goamz/goamz/s3"
+	"github.com/gregarmer/s3pgbackups/config"
+	"github.com/gregarmer/s3pgbackups/database"
+	"github.com/gregarmer/s3pgbackups/dest"
+	"github.com/gregarmer/s3pgbackups/utils"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"time"
 )
@@ -19,18 +21,6 @@ const workingDir = "temp"
 
 var verbose = flag.Bool("v", false, "be verbose")
 var noop = flag.Bool("n", false, "don't actually do anything, just print what would be done")
-
-func Fatalf(error string, args ...interface{}) {
-	criticalLog := log.New(os.Stderr, "", log.LstdFlags)
-	criticalLog.Printf(error, args...)
-	os.Exit(1)
-}
-
-func checkErr(err error) {
-	if err != nil {
-		Fatalf("Error: %s", err)
-	}
-}
 
 func main() {
 	start_time := time.Now()
@@ -47,15 +37,20 @@ func main() {
 		log.Printf("running in no-op mode, no commands will actually be executed")
 	}
 
-	config := LoadConfig()
-	log.Printf("config: %+v", config)
+	conf := config.LoadConfig()
+
+	// Don't print real passwords and secret keys in verbose mode
+	verbose_config := conf.Copy()
+	verbose_config.PostgresPassword = "****"
+	verbose_config.AwsSecretKey = "****"
+	log.Printf("config: %+v", verbose_config)
 
 	// AwsS3
-	awsS3 := AwsS3{config}
+	awsS3 := dest.AwsS3{conf}
 	bucket := awsS3.GetBucket()
 
 	// Postgres
-	postgres := Postgres{config}
+	postgres := database.Postgres{conf}
 
 	// create a working directory to store the backups
 	currentDir, _ := os.Getwd()
@@ -68,7 +63,7 @@ func main() {
 
 	// back up the databases
 	for _, db := range postgres.GetDatabases() {
-		if config.ShouldExcludeDb(db) {
+		if conf.ShouldExcludeDb(db) {
 			log.Printf("[database] skipping '%s' because it's in excludes", db)
 		} else {
 			log.Printf("[%s] backing up database", db)
@@ -76,55 +71,41 @@ func main() {
 			// create backup
 			backupFileName := fmt.Sprintf("%s-%s.sql", db, time.Now().Format("2006-01-02"))
 			pgDumpCmd := fmt.Sprintf("-E UTF-8 -T %s -f %s %s",
-				strings.Join(config.PostgresExcludeTable, " -T "),
+				strings.Join(conf.PostgresExcludeTable, " -T "),
 				fmt.Sprintf("%s/%s", fullWorkingDir, backupFileName),
 				db)
 			log.Printf("executing pg_dump %s", pgDumpCmd)
-			cmd := exec.Command("/usr/bin/pg_dump", strings.Split(pgDumpCmd, " ")...)
+			cmd := exec.Command("pg_dump", strings.Split(pgDumpCmd, " ")...)
 			var out bytes.Buffer
 			cmd.Stdout = &out
 			err := cmd.Run()
-			checkErr(err)
+			utils.CheckErr(err)
 			// fmt.Printf("out: %q\n", out.String())
 
 			// compress backup
 			log.Printf("compressing %s", backupFileName)
-			cmd = exec.Command("/bin/gzip", fmt.Sprintf("%s/%s", fullWorkingDir, backupFileName))
+			cmd = exec.Command("gzip", fmt.Sprintf("%s/%s", fullWorkingDir, backupFileName))
 			cmd.Stdout = &out
 			err = cmd.Run()
-			checkErr(err)
+			utils.CheckErr(err)
 		}
 	}
 
 	// create bucket incase it doesn't already exist
-	log.Printf("creating bucket %s", config.S3Bucket)
+	log.Printf("creating bucket %s", conf.S3Bucket)
 	err := bucket.PutBucket(s3.BucketOwnerFull)
-	checkErr(err)
+	utils.CheckErr(err)
 
 	// walk temp and upload everything to S3
-	filepath.Walk(fullWorkingDir, func(localFile string, fi os.FileInfo, err error) (e error) {
-		if !fi.IsDir() {
-			file, err := os.Open(localFile)
-			checkErr(err)
-			defer file.Close()
-
-			if *noop {
-				log.Printf("would upload %s (%s) (noop)", fi.Name(), humanize.Bytes(uint64(fi.Size())))
-			} else {
-				log.Printf("uploading %s (%s)", localFile, humanize.Bytes(uint64(fi.Size())))
-				err = bucket.PutReader("daily/"+fi.Name(), file, fi.Size(), "application/x-gzip", s3.BucketOwnerFull, s3.Options{})
-				checkErr(err)
-			}
-		}
-		return nil
-	})
+	awsS3.UploadTree(fullWorkingDir, noop)
+	fmt.Println(bucket, s3.BucketOwnerFull)
 
 	// cleanup working directory
 	os.RemoveAll(fullWorkingDir)
 
 	// rotate old s3 backups
 	log.Printf("rotating old backups")
-	awsS3.RotateBackups()
+	awsS3.RotateBackups(noop)
 
 	log.Printf("done - took %s", time.Since(start_time))
 }
