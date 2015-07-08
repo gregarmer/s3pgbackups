@@ -69,4 +69,5 @@ The `-v` parameter will make s3pgbackups be verbose about what is actually happe
 
 - [ ] Support for other RDBMS's
 - [ ] Support for other targets, besides Amazon S3
+- [ ] If we do the above, we should probably rename the project ?
 - [ ] Using S3 behind a proxy

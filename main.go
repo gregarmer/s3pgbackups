@@ -13,7 +13,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"strings"
+	"path/filepath"
 	"time"
 )
 
@@ -48,14 +48,14 @@ func main() {
 
 	// AwsS3
 	awsS3 := dest.AwsS3{conf}
-	bucket := awsS3.GetBucket()
+	bucket := awsS3.GetOrCreateBucket(noop)
 
 	// Postgres
 	postgres := database.Postgres{conf}
 
 	// create a working directory to store the backups
 	currentDir, _ := os.Getwd()
-	fullWorkingDir := currentDir + "/" + workingDir
+	fullWorkingDir := filepath.Join(currentDir, workingDir)
 	if _, err := os.Stat(fullWorkingDir); !os.IsNotExist(err) {
 		log.Printf("working directory already exists at %s, removing it",
 			fullWorkingDir)
@@ -71,34 +71,17 @@ func main() {
 			log.Printf("[%s] backing up database", db)
 
 			// create backup
-			backupFileName := fmt.Sprintf("%s-%s.sql", db,
-				time.Now().Format("2006-01-02"))
-			pgDumpCmd := fmt.Sprintf("-E UTF-8 -T %s -f %s %s",
-				strings.Join(conf.PostgresExcludeTable, " -T "),
-				fmt.Sprintf("%s/%s", fullWorkingDir, backupFileName),
-				db)
-			log.Printf("executing pg_dump %s", pgDumpCmd)
-			cmd := exec.Command("pg_dump", strings.Split(pgDumpCmd, " ")...)
+			backupFileName := postgres.DumpDatabase(db, fullWorkingDir)
+
+			// compress backup
 			var out bytes.Buffer
+			cmd := exec.Command("gzip", fmt.Sprintf("%s/%s", fullWorkingDir,
+				backupFileName))
 			cmd.Stdout = &out
 			err := cmd.Run()
 			utils.CheckErr(err)
-			// fmt.Printf("out: %q\n", out.String())
-
-			// compress backup
-			log.Printf("compressing %s", backupFileName)
-			cmd = exec.Command("gzip", fmt.Sprintf("%s/%s", fullWorkingDir,
-				backupFileName))
-			cmd.Stdout = &out
-			err = cmd.Run()
-			utils.CheckErr(err)
 		}
 	}
-
-	// create bucket incase it doesn't already exist
-	log.Printf("creating bucket %s", conf.S3Bucket)
-	err := bucket.PutBucket(s3.BucketOwnerFull)
-	utils.CheckErr(err)
 
 	// walk temp and upload everything to S3
 	awsS3.UploadTree(fullWorkingDir, noop)
