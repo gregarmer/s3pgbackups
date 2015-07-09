@@ -17,7 +17,7 @@ type Postgres struct {
 	Config *config.Config
 }
 
-func (postgres Postgres) GetDatabases() []string {
+func (postgres *Postgres) GetDatabases() []string {
 	var databases []string
 	var sslmode string
 
@@ -52,7 +52,7 @@ func (postgres Postgres) GetDatabases() []string {
 	return databases
 }
 
-func (postgres Postgres) DumpDatabase(db, workingDir string) string {
+func (postgres *Postgres) DumpDatabase(db, workingDir string) string {
 	backupFileName := fmt.Sprintf("%s-%s.sql", db,
 		time.Now().Format("2006-01-02"))
 	pgDumpCmd := fmt.Sprintf("-E UTF-8 -T %s -f %s %s",

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"github.com/goamz/goamz/s3"
 	"github.com/gregarmer/s3pgbackups/config"
 	"github.com/gregarmer/s3pgbackups/database"
 	"github.com/gregarmer/s3pgbackups/dest"
@@ -47,11 +46,10 @@ func main() {
 	log.Printf("config: %+v", verbose_config)
 
 	// AwsS3
-	awsS3 := dest.AwsS3{conf}
-	bucket := awsS3.GetOrCreateBucket(noop)
+	awsS3 := dest.AwsS3{Config: conf}
 
 	// Postgres
-	postgres := database.Postgres{conf}
+	postgres := database.Postgres{Config: conf}
 
 	// create a working directory to store the backups
 	currentDir, _ := os.Getwd()
@@ -85,7 +83,6 @@ func main() {
 
 	// walk temp and upload everything to S3
 	awsS3.UploadTree(fullWorkingDir, noop)
-	fmt.Println(bucket, s3.BucketOwnerFull)
 
 	// cleanup working directory
 	os.RemoveAll(fullWorkingDir)

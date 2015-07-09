@@ -41,15 +41,15 @@ func (c *Config) Copy() Config {
 	return *c
 }
 
-func (c Config) ShouldExcludeDb(db string) bool {
+func (c *Config) ShouldExcludeDb(db string) bool {
 	return _shouldExclude(db, c.PostgresExcludeDb)
 }
 
-func (c Config) ShouldExcludeTable(table string) bool {
+func (c *Config) ShouldExcludeTable(table string) bool {
 	return _shouldExclude(table, c.PostgresExcludeTable)
 }
 
-func (c Config) PreFlight() error {
+func (c *Config) PreFlight() error {
 	// do we have s3 config (keys, buckets etc) ?
 	if c.AwsAccessKey == "" {
 		return errors.New("missing AwsAccessKey, cannot continue")
