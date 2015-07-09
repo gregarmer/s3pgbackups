@@ -1,6 +1,7 @@
 package dest
 
 import (
+	"fmt"
 	"github.com/dustin/go-humanize"
 	"github.com/goamz/goamz/aws"
 	"github.com/goamz/goamz/s3"
@@ -9,6 +10,8 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
+	"time"
 )
 
 type AwsS3 struct {
@@ -87,18 +90,30 @@ func (awsS3 *AwsS3) RotateBackups(noop *bool) {
 	res, err := bucket.List("", "", "", 1000)
 	utils.CheckErr(err)
 
-	// 1. Come up with a set of required dates
-	// lastSevenDays := map[string]
-	// lastFourWeeks := map[string]
-	// datesToKeep := map[string]
+	now := time.Now()
+	toKeep := []string{
+		fmt.Sprintf("-%s.sql", now.Format("2006-01-02")),
+		fmt.Sprintf("-%s.sql", now.Add(-time.Hour*24).Format("2006-01-02")),
+		fmt.Sprintf("-%s.sql", now.Add(-time.Hour*24*2).Format("2006-01-02")),
+		fmt.Sprintf("-%s.sql", now.Add(-time.Hour*24*3).Format("2006-01-02")),
+		fmt.Sprintf("-%s.sql", now.Add(-time.Hour*24*4).Format("2006-01-02")),
+		fmt.Sprintf("-%s.sql", now.Add(-time.Hour*24*5).Format("2006-01-02")),
+		fmt.Sprintf("-%s.sql", now.Add(-time.Hour*24*6).Format("2006-01-02")),
+		fmt.Sprintf("-%s.sql", now.Add(-time.Hour*24*7).Format("2006-01-02")),
+	}
 
-	// 2. Run symmetric difference against all dates from list
-	// for list of files
-	//   if file not in datesToKeep
-	//     delete
-
-	// 3. Delete remainder
 	for _, v := range res.Contents {
-		awsS3.DeleteFile(bucket, v.Key, noop)
+		delete := true
+
+		for _, keep := range toKeep {
+			if strings.Contains(v.Key, keep) {
+				delete = false
+				break
+			}
+		}
+
+		if delete {
+			awsS3.DeleteFile(bucket, v.Key, noop)
+		}
 	}
 }
