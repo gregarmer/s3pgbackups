@@ -2,6 +2,8 @@
 
 PostgreSQL cluster backups to Amazon S3.
 
+[![Build Status](https://travis-ci.org/gregarmer/s3pgbackups.svg?branch=master)](https://travis-ci.org/gregarmer/s3pgbackups)
+
 ## Overview
 
 This application will backup your PostgreSQL cluster to Amazon S3, which includes:
