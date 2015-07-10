@@ -1,10 +1,12 @@
 DIST_DIR = dist
 
-build: clean
+deps:
 	go get "github.com/dustin/go-humanize"
 	go get "github.com/goamz/goamz/aws"
 	go get "github.com/goamz/goamz/s3"
 	go get "github.com/lib/pq"
+
+build: clean deps
 	test -d $(DIST_DIR) || mkdir $(DIST_DIR)
 	go build -o $(DIST_DIR)/s3pgbackups main.go
 
