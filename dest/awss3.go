@@ -87,19 +87,16 @@ func (awsS3 *AwsS3) RotateBackups(noop *bool) {
 	// We keep 1 backup per day for the last week, 1 backup per week for the
 	//   last month, and 1 backup per month indefinitely.
 	bucket := awsS3.getOrCreateBucket(noop)
-	res, err := bucket.List("", "", "", 1000)
+	res, err := bucket.List("daily", "", "", 1000)
 	utils.CheckErr(err)
 
 	now := time.Now()
-	toKeep := []string{
-		fmt.Sprintf("-%s.sql", now.Format("2006-01-02")),
-		fmt.Sprintf("-%s.sql", now.Add(-time.Hour*24).Format("2006-01-02")),
-		fmt.Sprintf("-%s.sql", now.Add(-time.Hour*24*2).Format("2006-01-02")),
-		fmt.Sprintf("-%s.sql", now.Add(-time.Hour*24*3).Format("2006-01-02")),
-		fmt.Sprintf("-%s.sql", now.Add(-time.Hour*24*4).Format("2006-01-02")),
-		fmt.Sprintf("-%s.sql", now.Add(-time.Hour*24*5).Format("2006-01-02")),
-		fmt.Sprintf("-%s.sql", now.Add(-time.Hour*24*6).Format("2006-01-02")),
-		fmt.Sprintf("-%s.sql", now.Add(-time.Hour*24*7).Format("2006-01-02")),
+	toKeep := []string{}
+
+	// keep the last 7 days worth of backups in daily/
+	for i := 0; i <= 6; i++ {
+		toKeep = append(toKeep, fmt.Sprintf("-%s.sql",
+			now.Add(-time.Hour*24*time.Duration(i)).Format("2006-01-02")))
 	}
 
 	for _, v := range res.Contents {
