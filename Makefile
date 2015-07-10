@@ -10,3 +10,9 @@ build: clean
 
 clean:
 	rm -rf $(DIST_DIR)
+
+test:
+	@go test -run=. -test.v ./config
+	@go test -run=. -test.v ./database
+	@go test -run=. -test.v ./dest
+	@go test -run=. -test.v ./utils
