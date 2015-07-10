@@ -70,4 +70,4 @@ The `-v` parameter will make s3pgbackups be verbose about what is actually happe
 - [ ] Support for other RDBMS's
 - [ ] Support for other targets, besides Amazon S3
 - [ ] If we do the above, we should probably rename the project ?
-- [ ] Using S3 behind a proxy
+- [x] Using S3 behind a proxy - depends on [this PR](https://github.com/goamz/goamz/pull/33/files#diff-7db3cb93944d57b2ffc803281c906018R1004)
