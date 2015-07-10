@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"flag"
-	"fmt"
 	"github.com/gregarmer/s3pgbackups/config"
 	"github.com/gregarmer/s3pgbackups/database"
 	"github.com/gregarmer/s3pgbackups/dest"
@@ -73,8 +72,7 @@ func main() {
 
 			// compress backup
 			var out bytes.Buffer
-			cmd := exec.Command("gzip", fmt.Sprintf("%s/%s", fullWorkingDir,
-				backupFileName))
+			cmd := exec.Command("gzip", filepath.Join(fullWorkingDir, backupFileName))
 			cmd.Stdout = &out
 			err := cmd.Run()
 			utils.CheckErr(err)

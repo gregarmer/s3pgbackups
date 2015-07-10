@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/user"
+	"path/filepath"
 )
 
 const configFile = ".s3pgbackups"
@@ -64,7 +65,7 @@ func (c *Config) PreFlight() error {
 
 func GetConfigPath() string {
 	u, _ := user.Current()
-	return u.HomeDir + "/" + configFile
+	return filepath.Join(u.HomeDir, configFile)
 }
 
 func LoadConfig() *Config {
