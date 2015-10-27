@@ -15,7 +15,7 @@ before_deploy:
   - make build
   - mkdir -p dist/usr/bin
   - mv dist/s3pgbackups dist/usr/bin/s3pgbackups
-  - fpm -s dir -t deb -n s3pgbackups -v 0.0.2 -C dist -p s3pgbackups_VERSION_ARCH.deb -m greg@sigterm.sh --description "Amazon S3 PostgreSQL backups tool." --url https://github.com/gregarmer/s3pgbackups usr/bin
+  - fpm -s dir -t deb -n s3pgbackups -v 0.0.3 -C dist -p s3pgbackups_VERSION_ARCH.deb -m greg@sigterm.sh --description "Amazon S3 PostgreSQL backups tool." --url https://github.com/gregarmer/s3pgbackups usr/bin
 
 deploy:
   provider: packagecloud
