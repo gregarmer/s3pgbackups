@@ -5,13 +5,13 @@ go:
   - 1.4
   - 1.5
 
-before_install:
-  - gem install fpm
-
 install: make deps
 
 script:
   - make test
+
+before_deploy:
+  - gem install fpm
   - make build
   - mkdir -p dist/usr/bin
   - mv dist/s3pgbackups dist/usr/bin/s3pgbackups
@@ -22,6 +22,7 @@ deploy:
   repository: packages
   username: gregarmer
   dist: debian/jessie
+  skip_cleanup: true
   token:
     secure: Xx5bQJ+MjkL/yCWrCDk6Fb4WbC7Ra10YFCVpC/qS9aIDRRDaGL35mxA+JZICHLxzHBpM3sTo8mRluWV0M4IhY01WkaksVOF0pW+zcRn1Wq2pJhvVg3iOXZQhc3/FWyBbp+inko6ldp8RL12H2opkVn8v2rdPoZZEqtoS8lS9ZhnAqy0F1bvyFJn+LEV8hmrPeV+6r95pw7lKum7CrqLks9n4hDeTJAIRNsKtRPMMJ392owUnXoPi0bOV9YU5sdz+Mdjv3zoTmVGI9tr3GDv1qL7Ho/995zygA/EHfbPlv+/Vlecp6zzd/F4MGLDKXukAhaqxyFVrbDUSX/oms8+b5TDVMeLZtcgQWYWkPCTW6tdgRXh3zT46PIxg4GBFao6U24Avdy5NOv3cj2C7roONWjz/Qqxty2sLw65+EXKoHEK1xacIUVfP6ihl6ZUq1D6NHLA7GbCk07bAD+IXZj8P93F9kav9Av5sU4g51nmw0Fa7bokSezrexWhNopLdMdYEhoDs87EuW4pWfzS5bGMRxswr7mkQ4UC5WbEqnGqOUb/3JliYSI1QyAXrxtKiJgLWgwPtQSaycT8ZOsdOQQt6uNTbvlHcyVqxuKbqWPdN5Cb4u1+wOBHse2tGu76mwpIZyeTkew/+napNRj3loKDs4+lRbvGzVKCsrkIOQo0KuNs=
   on:
