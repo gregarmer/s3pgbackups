@@ -5,6 +5,16 @@ go:
   - 1.4
   - 1.5
 
+before_install:
+  - gem install fpm
+  - gem install package_cloud
+
 install: make deps
 
-script: make test
+script:
+  - make test
+  - make build
+  - mkdir -p dist/usr/bin
+  - mv dist/s3pgbackups dist/usr/bin/s3pgbackups
+  - fpm -s dir -t deb -n s3pgbackups -v 0.0.1 -C dist -p s3pgbackups_VERSION_ARCH.deb usr/bin
+  - package_cloud push gregarmer/packages/debian/jessie s3pgbackups_*.deb
