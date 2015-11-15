@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/gregarmer/s3pgbackups/utils"
 	"io/ioutil"
 	"os"
@@ -22,20 +23,13 @@ type Config struct {
 	S3RotateOld bool   `json:"s3_rotate_old"`
 
 	// PostgreSQL
-	PostgresUsername     string   `json:"pg_username"`
-	PostgresPassword     string   `json:"pg_password"`
-	PostgresSSL          bool     `json:"pg_sslmode"`
-	PostgresExcludeDb    []string `json:"pg_exclude_dbs"`
-	PostgresExcludeTable []string `json:"pg_exclude_tables"`
-}
+	PostgresUsername string `json:"pg_username"`
+	PostgresPassword string `json:"pg_password"`
+	PostgresSSL      bool   `json:"pg_sslmode"`
 
-func _shouldExclude(item string, excludes []string) bool {
-	for _, b := range excludes {
-		if b == item {
-			return true
-		}
-	}
-	return false
+	// New style excludes - see issue #1 - example:
+	// ["database.*", "*.table", "database"]
+	Excludes []string `json:"excludes"`
 }
 
 func (c *Config) Copy() Config {
@@ -43,11 +37,27 @@ func (c *Config) Copy() Config {
 }
 
 func (c *Config) ShouldExcludeDb(db string) bool {
-	return _shouldExclude(db, c.PostgresExcludeDb)
+	for _, cmp := range c.Excludes {
+		if cmp == fmt.Sprintf("%s.*", db) || cmp == db {
+			return true
+		}
+	}
+	return false
 }
 
-func (c *Config) ShouldExcludeTable(table string) bool {
-	return _shouldExclude(table, c.PostgresExcludeTable)
+func (c *Config) ShouldExcludeTable(db string, t string) bool {
+	for _, cmp := range c.Excludes {
+		// all tables are excluded for this db
+		if cmp == fmt.Sprintf("%s.*", db) {
+			return true
+		}
+
+		// table match is excluded for this db
+		if cmp == fmt.Sprintf("%s.%s", db, t) || cmp == fmt.Sprintf("*.%s", t) {
+			return true
+		}
+	}
+	return false
 }
 
 func (c *Config) PreFlight() error {
