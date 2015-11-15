@@ -17,8 +17,7 @@ import (
 
 const workingDir = "temp"
 
-var configFile = flag.String("c", "~/.s3pgbackups",
-	"config file (defaults to ~/.s3pgbackups)")
+var configFile = flag.String("c", "~/.s3pgbackups", "path to the config file")
 var verbose = flag.Bool("v", false, "be verbose")
 var noop = flag.Bool("n", false,
 	"don't actually do anything, just print what would be done")
