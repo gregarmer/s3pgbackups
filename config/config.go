@@ -68,16 +68,23 @@ func GetConfigPath() string {
 	return filepath.Join(u.HomeDir, configFile)
 }
 
-func LoadConfig() *Config {
+func LoadConfig(configFile string) *Config {
+	// make sure the config file actually exists
+	if _, err := os.Stat(configFile); os.IsNotExist(err) {
+		utils.Fatalf("couldn't load config from %s", configFile)
+	}
+
 	// init config if needed
-	configPath := GetConfigPath()
-	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		InitConfig()
-		utils.Fatalf("couldn't find config, created empty config at %s, please configure", configPath)
+	defaultConfigPath := GetConfigPath()
+	if configFile == defaultConfigPath {
+		if _, err := os.Stat(configFile); os.IsNotExist(err) {
+			InitConfig()
+			utils.Fatalf("created empty config at %s, please configure", configFile)
+		}
 	}
 
 	// load config
-	file, _ := os.Open(configPath)
+	file, _ := os.Open(configFile)
 	decoder := json.NewDecoder(file)
 	config := Config{}
 	if err := decoder.Decode(&config); err != nil {

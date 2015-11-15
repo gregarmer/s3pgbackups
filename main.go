@@ -17,6 +17,8 @@ import (
 
 const workingDir = "temp"
 
+var configFile = flag.String("c", "~/.s3pgbackups",
+	"config file (defaults to ~/.s3pgbackups)")
 var verbose = flag.Bool("v", false, "be verbose")
 var noop = flag.Bool("n", false,
 	"don't actually do anything, just print what would be done")
@@ -36,7 +38,7 @@ func main() {
 		log.Printf("running in no-op mode, no commands will really be executed")
 	}
 
-	conf := config.LoadConfig()
+	conf := config.LoadConfig(*configFile)
 
 	// Don't print real passwords and secret keys in verbose mode
 	verbose_config := conf.Copy()
