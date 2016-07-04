@@ -13,7 +13,7 @@ build: clean deps
 clean:
 	rm -rf $(DIST_DIR)
 
-test:
+test: clean deps
 	@go test -run=. -test.v ./config
 	@go test -run=. -test.v ./database
 	@go test -run=. -test.v ./dest

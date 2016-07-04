@@ -30,7 +30,7 @@ $ curl -s https://packagecloud.io/install/repositories/gregarmer/packages/script
 ## Getting Started
 
 1. Follow the installation steps above.
-2. Configure ~/.s3pgbackups - something like this:
+2. Configure ~/.s3pgbackups or your-config.cfg - something like this:
 
     ```json
     {
@@ -41,27 +41,31 @@ $ curl -s https://packagecloud.io/install/repositories/gregarmer/packages/script
       "pg_username": "username",
       "pg_password": "password",
       "pg_sslmode": true,
-      "pg_exclude_dbs": ["postgres", "template0"],
-      "pg_exclude_tables": ["django_session"]
+      "excludes": ["postgres", "template0", "*.django_session", "db1.table3"],
     }
     ```
 
     > Note: Running s3pgbackups without a config will create a blank config.
-3. Run `s3pgbackups`
+3. Run `s3pgbackups -c your-config.cfg` or alternatively `s3pgbackups`
 
 ## Usage
 
 ```
 $ s3pgbackups -h
-Usage of s3pgbackups:
-  -n=false: don't actually do anything, just print what would be done
-  -v=false: be verbose
+Usage of dist/s3pgbackups:
+  -c string  path to the config file (default "~/.s3pgbackups")
+  -n         don't actually do anything, just print what would be done
+  -v         be verbose
 ```
 
-You can use the `-n` parameter to put s3pgbackups into no-op mode, where no actions
-will actually be performed.
+`-c config.cfg` is optional. If you don't specify a config it'll default to
+`~/.s3pgbackups` and will create this file if it doesn't already exist.
 
-The `-v` parameter will make s3pgbackups be verbose about what is actually happening.
+You can use the `-n` parameter to put s3pgbackups into no-op mode, where no
+actions will actually be performed.
+
+The `-v` parameter will make s3pgbackups be verbose about what is actually
+happening.
 
 ## TODO
 

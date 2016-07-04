@@ -1,0 +1,13 @@
+build:
+  image: golang
+  commands:
+    - make test
+
+notify:
+  slack:
+    webhook_url: $$SLACK_WEBHOOK
+    channel: general
+    username: $$SLACK_USERNAME
+    template: >
+      [{{ repo.full_name }}] <{{ system.link_url }}/{{ repo.full_name }}/{{ build.number }}|build #{{ build.number }}> on branch *{{ build.branch }}* by *{{ build.author }}* finished with a *{{ build.status }}* status.
+
