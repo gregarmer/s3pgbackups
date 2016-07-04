@@ -1,7 +1,7 @@
 build:
   image: golang
   commands:
-    - make
+    - make test
 
 notify:
   slack:
