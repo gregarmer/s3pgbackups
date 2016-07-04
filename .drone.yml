@@ -5,9 +5,9 @@ build:
 
 notify:
   slack:
-    webhook_url: https://hooks.slack.com/services/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
+    webhook_url: $$SLACK_WEBHOOK
     channel: general
-    username: drone
+    username: $$SLACK_USERNAME
     template: >
       [{{ repo.full_name }}] <{{ system.link_url }}/{{ repo.full_name }}/{{ build.number }}|build #{{ build.number }}> on branch *{{ build.branch }}* by *{{ build.author }}* finished with a *{{ build.status }}* status.
 
