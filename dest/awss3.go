@@ -1,12 +1,12 @@
 package dest
 
 import (
+	"../config"
+	"../utils"
 	"fmt"
 	"github.com/dustin/go-humanize"
 	"github.com/goamz/goamz/aws"
 	"github.com/goamz/goamz/s3"
-	"github.com/gregarmer/s3pgbackups/config"
-	"github.com/gregarmer/s3pgbackups/utils"
 	"log"
 	"os"
 	"path/filepath"

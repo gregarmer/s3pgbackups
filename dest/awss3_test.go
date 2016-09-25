@@ -1,7 +1,7 @@
 package dest
 
 import (
-	"github.com/gregarmer/s3pgbackups/config"
+	"../config"
 	"testing"
 )
 

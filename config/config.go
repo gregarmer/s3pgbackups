@@ -1,9 +1,9 @@
 package config
 
 import (
+	"../utils"
 	"encoding/json"
 	"errors"
-	"github.com/gregarmer/s3pgbackups/utils"
 	"io/ioutil"
 	"os"
 	"os/user"

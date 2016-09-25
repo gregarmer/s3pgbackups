@@ -1,12 +1,12 @@
 package main
 
 import (
+	"./config"
+	"./database"
+	"./dest"
+	"./utils"
 	"bytes"
 	"flag"
-	"github.com/gregarmer/s3pgbackups/config"
-	"github.com/gregarmer/s3pgbackups/database"
-	"github.com/gregarmer/s3pgbackups/dest"
-	"github.com/gregarmer/s3pgbackups/utils"
 	"io/ioutil"
 	"log"
 	"os"
